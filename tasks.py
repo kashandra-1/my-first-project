@@ -1,25 +1,55 @@
 import json
 import os
+import time
 from datetime import datetime
 from rich.console import Console
 from rich.table import Table
 from rich import box
+from rich.progress import Progress, SpinnerColumn, TextColumn
 
 console = Console()
 FILE = "tasks.json"
 
 
+# ----------- UTIL -----------
+
+def clean_text(text):
+    return text.encode("utf-8", "ignore").decode("utf-8")
+
+
+def loading_animation(text="Loading..."):
+    with Progress(
+        SpinnerColumn(),
+        TextColumn("[bold cyan]{task.description}"),
+        transient=True,
+    ) as progress:
+        progress.add_task(description=text, total=None)
+        time.sleep(1.2)
+
+
+# ----------- DATA -----------
+
 def load_tasks():
     if os.path.exists(FILE):
-        with open(FILE, "r", encoding="utf-8") as f:
+        with open(FILE, "r", encoding="utf-8", errors="ignore") as f:
             return json.load(f)
     return []
 
 
 def save_tasks(tasks):
+    with Progress(
+        SpinnerColumn(),
+        TextColumn("[bold green]Saving..."),
+        transient=True,
+    ) as progress:
+        progress.add_task(description="Saving...", total=None)
+        time.sleep(0.8)
+
     with open(FILE, "w", encoding="utf-8", errors="ignore") as f:
         json.dump(tasks, f, indent=2, ensure_ascii=False)
 
+
+# ----------- UI -----------
 
 def show_tasks(tasks):
     if not tasks:
@@ -55,14 +85,8 @@ def show_tasks(tasks):
     console.print(table)
 
 
-def clean_text(text):
-    return text.encode("utf-8", "ignore").decode("utf-8")
-
-
 def add_task(tasks):
-    title = input("Task title: ").strip()
-    title = clean_text(title)
-
+    title = clean_text(input("Task title: ").strip())
     priority = input("Priority (low/medium/high): ").strip().lower()
 
     if priority not in ["low", "medium", "high"]:
@@ -103,7 +127,10 @@ def delete_task(tasks):
         console.print("[red]Invalid number![/red]")
 
 
+# ----------- MAIN -----------
+
 def main():
+    loading_animation("🚀 Starting Task Tracker...")
     tasks = load_tasks()
 
     while True:
@@ -124,6 +151,7 @@ def main():
         elif choice == "4":
             delete_task(tasks)
         elif choice == "5":
+            console.print("[bold magenta]Goodbye 👋[/bold magenta]")
             break
         else:
             console.print("[red]Invalid choice![/red]")
